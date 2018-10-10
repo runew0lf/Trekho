@@ -4,8 +4,10 @@ import os
 import os.path
 from PyQt5.QtWidgets import QApplication, QMainWindow, QFileDialog, QAction, QMenu, QSystemTrayIcon, QStyle, qApp
 from PyQt5.QtGui import QColor
-from PyQt5.QtCore import pyqtSlot
+from PyQt5.QtCore import pyqtSlot, Qt
+
 import subprocess
+from dotenv import load_dotenv
 
 
 def getPythonPath(currentpath):
@@ -55,6 +57,18 @@ class ApplicationWindow(QMainWindow):
         self.tray_icon.setContextMenu(tray_menu)
         self.tray_icon.show()
 
+        # Listview context menu
+        self.ui.listboxFiles.setContextMenuPolicy(Qt.CustomContextMenu) 
+        self.ui.listboxFiles.customContextMenuRequested.connect(self.showMenu)
+    
+    def showMenu(self, pos):
+        menu = QMenu()
+        quitAction = menu.addAction("Quit")
+        action = menu.exec_(self.ui.listboxFiles.viewport().mapToGlobal(pos))
+        if action == quitAction:
+            pass
+
+
     # Override closeEvent, to intercept the window closing event
     # The window will be closed only if there is no check mark in the check box
     def closeEvent(self, event):
@@ -73,25 +87,34 @@ class ApplicationWindow(QMainWindow):
 
     @pyqtSlot()
     def on_btnExit(self):
+        self.tray_icon.hide()
+        # Check to see if process is still running before we terminate it
+        poll = self.process_id.poll()
+        if poll is None:
+            self.process_id.terminate()
         exit(0)
 
     @pyqtSlot()
     def on_btnStop(self):
         self.ui.listboxFiles.currentItem().setBackground(self.originalBG)
-        self.process_id.terminate()
+        # Check to see if process is still running before we terminate it
+        poll = self.process_id.poll()
+        if poll is None:
+            self.process_id.terminate()
         print("Stopped")
 
     @pyqtSlot()
     def on_btnStart(self):
         print("started")
         self.originalBG = self.ui.listboxFiles.currentItem().background()
+
         full_path = str(self.ui.listboxFiles.currentItem().text())
         self.ui.listboxFiles.currentItem().setBackground(QColor('#7fc97f'))
         dir_path = os.path.dirname(os.path.abspath(full_path))
         std_out = open(f"{full_path}.log", "w")
-        print(getPythonPath(dir_path))
-        pass
-        self.process_id = subprocess.Popen([f"{dir_path}/.venv/Scripts/python",
+        env_path = f"{dir_path}/.env"
+        load_dotenv(dotenv_path=env_path)
+        self.process_id = subprocess.Popen([f"{getPythonPath(dir_path)}",
                                             str(self.ui.listboxFiles.currentItem().text())],
                                            stdout=std_out,
                                            cwd=dir_path)
