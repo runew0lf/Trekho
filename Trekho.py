@@ -18,9 +18,9 @@ def getPythonPath(currentpath):
     Gets location of python.exe from current path
     """
     for dirpath, dirnames, filenames in os.walk(currentpath):
-        for filename in [f for f in filenames if f.lower() == "python.exe"]:
+        for filename in [f for f in filenames if f.lower() == "pythonw.exe"]:
             return os.path.join(dirpath, filename)
-    return "python"
+    return "pythonw"
 
 
 class ApplicationWindow(QMainWindow):
