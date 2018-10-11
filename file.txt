@@ -1,2 +1,5 @@
 D:/Python/CoffeeClicker/coffee_clicker.py
 D:/Python/CSV html list/csvlist.py
+D:/Python/FalloutCSV/csvlist.py
+D:/Python/Phylax/phylax.py
+D:/Python/Surrenderat20scraper/scraper.py

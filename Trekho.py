@@ -1,4 +1,4 @@
-from PyRun_UI import Ui_dlgPyRun
+from Trekho_UI import Ui_dlgTrekho
 import sys
 import os
 import os.path
@@ -21,7 +21,7 @@ class ApplicationWindow(QMainWindow):
     def __init__(self):
         super(ApplicationWindow, self).__init__()
 
-        self.ui = Ui_dlgPyRun()
+        self.ui = Ui_dlgTrekho()
         self.ui.setupUi(self)
         self.process_id = None
         self.originalBG = None
@@ -58,16 +58,17 @@ class ApplicationWindow(QMainWindow):
         self.tray_icon.show()
 
         # Listview context menu
-        self.ui.listboxFiles.setContextMenuPolicy(Qt.CustomContextMenu) 
+        self.ui.listboxFiles.setContextMenuPolicy(Qt.CustomContextMenu)
         self.ui.listboxFiles.customContextMenuRequested.connect(self.showMenu)
-    
+
     def showMenu(self, pos):
         menu = QMenu()
-        quitAction = menu.addAction("Quit")
+        exploreAction = menu.addAction("Open in explorer")
         action = menu.exec_(self.ui.listboxFiles.viewport().mapToGlobal(pos))
-        if action == quitAction:
-            pass
-
+        if action == exploreAction:
+            full_path = str(self.ui.listboxFiles.currentItem().text())
+            dir_path = os.path.dirname(os.path.abspath(full_path))
+            os.startfile(dir_path)
 
     # Override closeEvent, to intercept the window closing event
     # The window will be closed only if there is no check mark in the check box

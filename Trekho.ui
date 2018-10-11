@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <ui version="4.0">
- <class>dlgPyRun</class>
- <widget class="QDialog" name="dlgPyRun">
+ <class>dlgTrekho</class>
+ <widget class="QDialog" name="dlgTrekho">
   <property name="enabled">
    <bool>true</bool>
   </property>
@@ -14,7 +14,7 @@
    </rect>
   </property>
   <property name="windowTitle">
-   <string>PyRun</string>
+   <string>Trekho</string>
   </property>
   <widget class="QListWidget" name="listboxFiles">
    <property name="geometry">
