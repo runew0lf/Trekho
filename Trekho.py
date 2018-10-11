@@ -1,17 +1,22 @@
-from Trekho_UI import Ui_dlgTrekho
-from Ui_trek_log import Ui_dlgLogs
-import sys
 import os
 import os.path
-from PyQt5.QtWidgets import QApplication, QMainWindow, QFileDialog, QAction, QMenu, QSystemTrayIcon, QStyle, qApp, QDialog
-from PyQt5.QtGui import QColor, QTextCursor
-from PyQt5.QtCore import pyqtSlot, Qt
-
 import subprocess
+import sys
+
 from dotenv import load_dotenv
+from PyQt5.QtCore import Qt, pyqtSlot, QTimer
+from PyQt5.QtGui import QColor, QTextCursor
+from PyQt5.QtWidgets import (QAction, QApplication, QDialog, QFileDialog,
+                             QMainWindow, QMenu, QStyle, QSystemTrayIcon, qApp)
+
+from Trekho_UI import Ui_dlgTrekho
+from Ui_trek_log import Ui_dlgLogs
 
 
 def getPythonPath(currentpath):
+    """
+    Gets location of python.exe from current path
+    """
     for dirpath, dirnames, filenames in os.walk(currentpath):
         for filename in [f for f in filenames if f.lower() == "python.exe"]:
             return os.path.join(dirpath, filename)
@@ -24,7 +29,7 @@ class ApplicationWindow(QMainWindow):
 
         self.ui = Ui_dlgTrekho()
         self.ui.setupUi(self)
-        self.process_id = None
+        self.process_id = {}
         self.originalBG = None
 
         # Add Capture Events for Buttons
@@ -34,17 +39,15 @@ class ApplicationWindow(QMainWindow):
         self.ui.btnStart.clicked.connect(self.on_btnStart)
         self.ui.btnStop.clicked.connect(self.on_btnStop)
 
+        #Start 6 second time to check if process's are still running
+        self.timer = QTimer(self)
+        self.timer.timeout.connect(self.check_process)
+        self.timer.start(1000 * 6)
+
         # Init QSystemTrayIcon
         self.tray_icon = QSystemTrayIcon(self)
         self.tray_icon.setIcon(
             self.style().standardIcon(QStyle.SP_ComputerIcon))
-
-        '''
-            Define and add steps to work with the system tray icon
-            show - show window
-            hide - hide window
-            exit - exit from application
-        '''
         show_action = QAction("Show", self)
         quit_action = QAction("Exit", self)
         hide_action = QAction("Hide", self)
@@ -56,12 +59,29 @@ class ApplicationWindow(QMainWindow):
         tray_menu.addAction(hide_action)
         tray_menu.addAction(quit_action)
         self.tray_icon.setContextMenu(tray_menu)
+        self.tray_icon.activated.connect(self.systemIcon)
         self.tray_icon.show()
-
+  
         # Listview context menu
         self.ui.listboxFiles.setContextMenuPolicy(Qt.CustomContextMenu)
         self.ui.listboxFiles.customContextMenuRequested.connect(self.showMenu)
 
+    # Restore view when tray icon doubleclicked
+    def systemIcon(self, reason):
+        if reason == QSystemTrayIcon.DoubleClick:
+            self.show()
+
+
+    # Check to see what process's are running on the timer and clear the background if complete
+    def check_process(self):
+        for fname, process in self.process_id.items():
+            poll = process.poll()
+            if poll is not None:
+                for i in range(self.ui.listboxFiles.count()):
+                    if self.ui.listboxFiles.item(i).text() == fname:
+                        self.ui.listboxFiles.item(i).setBackground(self.originalBG)
+
+    # Show log dialog
     def showLog(self):
         dlgLog = QDialog(self)
         ui = Ui_dlgLogs()
@@ -76,6 +96,7 @@ class ApplicationWindow(QMainWindow):
         ui.textEdit.moveCursor(QTextCursor.End)
         dlgLog.exec_()
 
+    # Add right-click context menu for the listview
     def showMenu(self, pos):
         menu = QMenu()
         exploreAction = menu.addAction("Open in explorer")
@@ -89,7 +110,6 @@ class ApplicationWindow(QMainWindow):
             self.showLog()
 
     # Override closeEvent, to intercept the window closing event
-    # The window will be closed only if there is no check mark in the check box
     def closeEvent(self, event):
         event.ignore()
         self.hide()
@@ -107,19 +127,20 @@ class ApplicationWindow(QMainWindow):
     @pyqtSlot()
     def on_btnExit(self):
         self.tray_icon.hide()
-        # Check to see if process is still running before we terminate it
-        poll = self.process_id.poll()
-        if poll is None:
-            self.process_id.terminate()
+        for fname, process in self.process_id.items():
+            poll = process.poll()
+            if poll is None:
+                self.process.terminate()
         exit(0)
 
     @pyqtSlot()
     def on_btnStop(self):
         self.ui.listboxFiles.currentItem().setBackground(self.originalBG)
+        filename = self.ui.listboxFiles.currentItem().text()
         # Check to see if process is still running before we terminate it
-        poll = self.process_id.poll()
+        poll = self.process_id[filename].poll()
         if poll is None:
-            self.process_id.terminate()
+            self.process_id[filename].terminate()
         print("Stopped")
 
     @pyqtSlot()
@@ -133,10 +154,11 @@ class ApplicationWindow(QMainWindow):
         std_out = open(f"{full_path}.log", "w")
         env_path = f"{dir_path}/.env"
         load_dotenv(dotenv_path=env_path)
-        self.process_id = subprocess.Popen([f"{getPythonPath(dir_path)}",
-                                            str(self.ui.listboxFiles.currentItem().text())],
-                                           stdout=std_out,
-                                           cwd=dir_path)
+        process_id = subprocess.Popen([f"{getPythonPath(dir_path)}",
+                                       str(self.ui.listboxFiles.currentItem().text())],
+                                      stdout=std_out,
+                                      cwd=dir_path)
+        self.process_id[full_path] = process_id
 
     @pyqtSlot()
     def on_btnRemove(self):
