@@ -1,8 +1,9 @@
 from Trekho_UI import Ui_dlgTrekho
+from Ui_trek_log import Ui_dlgLogs
 import sys
 import os
 import os.path
-from PyQt5.QtWidgets import QApplication, QMainWindow, QFileDialog, QAction, QMenu, QSystemTrayIcon, QStyle, qApp
+from PyQt5.QtWidgets import QApplication, QMainWindow, QFileDialog, QAction, QMenu, QSystemTrayIcon, QStyle, qApp, QDialog
 from PyQt5.QtGui import QColor
 from PyQt5.QtCore import pyqtSlot, Qt
 
@@ -61,14 +62,28 @@ class ApplicationWindow(QMainWindow):
         self.ui.listboxFiles.setContextMenuPolicy(Qt.CustomContextMenu)
         self.ui.listboxFiles.customContextMenuRequested.connect(self.showMenu)
 
+    def showLog(self):
+        dlgLog = QDialog(self)
+        ui = Ui_dlgLogs()
+        ui.setupUi(dlgLog)
+        full_path = str(self.ui.listboxFiles.currentItem().text())
+        std_out = open(f"{full_path}.log", "r")
+        text = std_out.readlines()
+        ui.textEdit.setText("\n".join(text))
+        dlgLog.show()
+        dlgLog.exec_()
+
     def showMenu(self, pos):
         menu = QMenu()
         exploreAction = menu.addAction("Open in explorer")
+        showlogAction = menu.addAction("Show Logfile")
         action = menu.exec_(self.ui.listboxFiles.viewport().mapToGlobal(pos))
         if action == exploreAction:
             full_path = str(self.ui.listboxFiles.currentItem().text())
             dir_path = os.path.dirname(os.path.abspath(full_path))
             os.startfile(dir_path)
+        if action == showlogAction:
+            self.showLog()
 
     # Override closeEvent, to intercept the window closing event
     # The window will be closed only if there is no check mark in the check box
