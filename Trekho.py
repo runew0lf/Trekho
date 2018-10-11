@@ -4,7 +4,7 @@ import sys
 import os
 import os.path
 from PyQt5.QtWidgets import QApplication, QMainWindow, QFileDialog, QAction, QMenu, QSystemTrayIcon, QStyle, qApp, QDialog
-from PyQt5.QtGui import QColor
+from PyQt5.QtGui import QColor, QTextCursor
 from PyQt5.QtCore import pyqtSlot, Qt
 
 import subprocess
@@ -68,9 +68,12 @@ class ApplicationWindow(QMainWindow):
         ui.setupUi(dlgLog)
         full_path = str(self.ui.listboxFiles.currentItem().text())
         std_out = open(f"{full_path}.log", "r")
+        filename = os.path.basename(full_path)
         text = std_out.readlines()
         ui.textEdit.setText("\n".join(text))
+        dlgLog.setWindowTitle(f"{filename} - Log")
         dlgLog.show()
+        ui.textEdit.moveCursor(QTextCursor.End)
         dlgLog.exec_()
 
     def showMenu(self, pos):
