@@ -2,3 +2,4 @@ D:/Python/CoffeeClicker/coffee_clicker.py
 D:/Python/CSV html list/csvlist.py
 D:/Python/FalloutCSV/csvlist.py
 D:/Python/twitchbot v2/twitchbot.py
+D:/Python/Nexus Hidden List/test.py

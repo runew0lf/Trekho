@@ -39,7 +39,7 @@ class ApplicationWindow(QMainWindow):
         self.ui.btnStart.clicked.connect(self.on_btnStart)
         self.ui.btnStop.clicked.connect(self.on_btnStop)
 
-        #Start 6 second time to check if process's are still running
+        # Start 6 second time to check if process's are still running
         self.timer = QTimer(self)
         self.timer.timeout.connect(self.check_process)
         self.timer.start(1000 * 6)
@@ -61,7 +61,7 @@ class ApplicationWindow(QMainWindow):
         self.tray_icon.setContextMenu(tray_menu)
         self.tray_icon.activated.connect(self.systemIcon)
         self.tray_icon.show()
-  
+
         # Listview context menu
         self.ui.listboxFiles.setContextMenuPolicy(Qt.CustomContextMenu)
         self.ui.listboxFiles.customContextMenuRequested.connect(self.showMenu)
@@ -71,7 +71,6 @@ class ApplicationWindow(QMainWindow):
         if reason == QSystemTrayIcon.DoubleClick:
             self.show()
 
-
     # Check to see what process's are running on the timer and clear the background if complete
     def check_process(self):
         for fname, process in self.process_id.items():
@@ -79,7 +78,8 @@ class ApplicationWindow(QMainWindow):
             if poll is not None:
                 for i in range(self.ui.listboxFiles.count()):
                     if self.ui.listboxFiles.item(i).text() == fname:
-                        self.ui.listboxFiles.item(i).setBackground(self.originalBG)
+                        self.ui.listboxFiles.item(
+                            i).setBackground(self.originalBG)
 
     # Show log dialog
     def showLog(self):
@@ -151,14 +151,14 @@ class ApplicationWindow(QMainWindow):
         full_path = str(self.ui.listboxFiles.currentItem().text())
         self.ui.listboxFiles.currentItem().setBackground(QColor('#7fc97f'))
         dir_path = os.path.dirname(os.path.abspath(full_path))
-        std_out = open(f"{full_path}.log", "w")
-        env_path = f"{dir_path}/.env"
-        load_dotenv(dotenv_path=env_path)
-        process_id = subprocess.Popen([f"{getPythonPath(dir_path)}",
-                                       str(self.ui.listboxFiles.currentItem().text())],
-                                      stdout=std_out,
-                                      cwd=dir_path)
-        self.process_id[full_path] = process_id
+        with open(f"{full_path}.log", "w") as std_out:
+            env_path = f"{dir_path}/.env"
+            load_dotenv(dotenv_path=env_path)
+            process_id = subprocess.Popen([f"{getPythonPath(dir_path)}",
+                                           str(self.ui.listboxFiles.currentItem().text())],
+                                          stdout=std_out,
+                                          cwd=dir_path)
+            self.process_id[full_path] = process_id
 
     @pyqtSlot()
     def on_btnRemove(self):
